@@ -65,9 +65,11 @@ class EducationalModuleFilter(django_filters.FilterSet):
 
     def custom_search(self, queryset, name, value):
         """Кастомный поиск по нескольким полям"""
+        title_condition = Q(title__icontains=value)
+        description_condition = Q(description__icontains=value)
+
         return queryset.filter(
-            Q(title__icontains=value) |
-            Q(description__icontains=value)
+            title_condition | description_condition
         ).distinct()
 
     @property
