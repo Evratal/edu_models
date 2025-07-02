@@ -1,5 +1,9 @@
+# flake8: noqa: E501
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+
+
+from . import models
 from .models import EducationalModule
 
 @receiver(pre_save, sender=EducationalModule)

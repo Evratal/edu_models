@@ -1,4 +1,5 @@
-from django.shortcuts import get_object_or_404
+# flake8: noqa: E501
+
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,6 +10,7 @@ from .models import EducationalModule
 from .serializers import EducationalModuleSerializer, EducationalModuleDetailSerializer
 from .filters import EducationalModuleFilter
 
+
 class IsAdminOrReadOnly(BasePermission):
     """Разрешение: редактирование только для админов, чтение для всех"""
     def has_permission(self, request, view):
@@ -17,6 +19,7 @@ class IsAdminOrReadOnly(BasePermission):
             request.user and
             request.user.is_staff
         )
+
 
 class EducationalModuleViewSet(viewsets.ModelViewSet):
     """
