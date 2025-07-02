@@ -1,86 +1,72 @@
 name: Django CI/CD Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install flake8
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8
-      - name: Create flake8 config
-        run: |
+      - run: pip install flake8
+      - run: |
           cat << EOF > .flake8
           [flake8]
           max-line-length = 120
           ignore = E203,E266,W503,E501,C901
           exclude = .git,__pycache__,migrations,venv,.venv,env,.env,.github,scripts,docs,build,dist
           EOF
-      - name: Run flake8
-        run: flake8 .
+      - run: flake8 .
 
   test:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run tests
-        run: python manage.py test
-
+      - run: pip install -r requirements.txt
+      - run: python manage.py test
 
   deploy:
-    needs: build
+    needs: test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Validate secrets
         run: |
-          echo "Docker Hub username is set: ${{ secrets.DOCKER_HUB_USERNAME != '' }}"
-          echo "Docker Hub token is set: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN != '' }}"
-          echo "SSH key is set: ${{ secrets.SSH_KEY != '' }}"
+          echo "SSH key: ${{ secrets.SSH_KEY != '' }}"
           echo "SSH user: ${{ secrets.SSH_USER || 'NOT_SET' }}"
           echo "Server IP: ${{ secrets.SERVER_IP || 'NOT_SET' }}"
+          echo "Deploy dir: ${{ secrets.DEPLOY_DIR || 'NOT_SET' }}"
 
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Test SSH connection
+      - name: Deploy via Docker Compose
         run: |
-          echo "Testing connection to server..."
-          ssh -o ConnectTimeout=15 \
-              -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'Connection successful! Hostname: $(hostname)'"
-
-      - name: Deploy to server
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          echo "Starting deployment..."
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
-          docker stop myapp || true
-          docker rm myapp || true
-          docker run -d \
-            --name myapp \
-            -p 80:8000 \
-            -e DJANGO_SETTINGS_MODULE=core.settings.production \
-            ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
-          echo "Deployment completed!"
+          rsync -avz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='__pycache__' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}
+          
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd ${{ secrets.DEPLOY_DIR }}
+            docker-compose down
+            docker-compose pull || true
+            docker-compose up -d --build
+            docker-compose exec web python manage.py migrate
+            docker-compose exec web python manage.py collectstatic --noinput
           EOF
