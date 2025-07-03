@@ -1,6 +1,4 @@
 from rest_framework.test import APITestCase
-from rest_framework import serializers
-from edu_modules.models import EducationalModule
 from edu_modules.serializers import EducationalModuleCreateUpdateSerializer
 
 

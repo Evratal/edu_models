@@ -1,7 +1,6 @@
 import os
 import django
 import pytest
-from django.conf import settings
 from django.db import connection
 
 from edu_modules.models import EducationalModule
