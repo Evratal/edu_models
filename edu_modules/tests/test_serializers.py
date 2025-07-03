@@ -3,6 +3,7 @@ from rest_framework import serializers
 from edu_modules.models import EducationalModule
 from edu_modules.serializers import EducationalModuleCreateUpdateSerializer
 
+
 class EducationalModuleSerializerTest(APITestCase):
     def setUp(self):
         self.module_data = {

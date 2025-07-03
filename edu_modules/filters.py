@@ -4,6 +4,7 @@ from .models import EducationalModule
 from django.utils.translation import gettext_lazy as _
 from django.forms import DateInput  # Используем стандартный виджет Django
 
+
 class EducationalModuleFilter(django_filters.FilterSet):
     # Простые числовые фильтры
     order = django_filters.NumberFilter(field_name='order')

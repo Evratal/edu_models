@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from edu_modules.models import EducationalModule
 from django.utils.translation import gettext_lazy as _
 
+
 class EducationalModuleModelTest(TestCase):
     def setUp(self):
         self.module = EducationalModule.objects.create(

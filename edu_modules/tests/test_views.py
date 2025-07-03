@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from edu_modules.models import EducationalModule
 
+
 class EducationalModuleViewSetTest(APITestCase):
     @classmethod
     def setUpTestData(cls):
@@ -19,7 +20,6 @@ class EducationalModuleViewSetTest(APITestCase):
             title="Test Module",
             description="Description"
         )
-
 
     def test_toggle_active_action(self):
         self.client.force_authenticate(user=self.admin)

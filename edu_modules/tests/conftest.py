@@ -11,6 +11,7 @@ def pytest_configure():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     django.setup()
 
+
 @pytest.fixture(autouse=True)
 def reset_db(request):
     # Очищаем БД перед каждым тестом
@@ -19,6 +20,7 @@ def reset_db(request):
     # Сбрасываем последовательности (для PostgreSQL)
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM sqlite_sequence")
+
 
 def enable_db_access_for_all_tests(db):
     """Дает доступ к базе данных всем тестам"""
