@@ -2,7 +2,7 @@ import django_filters
 from django.db.models import Q
 from .models import EducationalModule
 from django.utils.translation import gettext_lazy as _
-
+from django.forms import DateInput  # Используем стандартный виджет Django
 
 class EducationalModuleFilter(django_filters.FilterSet):
     # Простые числовые фильтры
@@ -46,14 +46,12 @@ class EducationalModuleFilter(django_filters.FilterSet):
         )
     )
 
-    # Фильтр по дате создания
-    created_after = django_filters.DateTimeFilter(
+    # Фильтр по дате создания (исправленная версия)
+    created_after = django_filters.DateFilter(
         field_name='created_at',
         lookup_expr='gte',
         label=_('Создано после'),
-        widget=django_filters.widgets.DateInput(
-            attrs={'type': 'date'}
-        )
+        widget=DateInput(attrs={'type': 'date'})  # Используем стандартный DateInput
     )
 
     class Meta:
@@ -65,19 +63,25 @@ class EducationalModuleFilter(django_filters.FilterSet):
 
     def custom_search(self, queryset, name, value):
         """Кастомный поиск по нескольким полям"""
-        title_condition = Q(title__icontains=value)
-        description_condition = Q(description__icontains=value)
+        search_terms = value.split()
+        queries = []
 
-        return queryset.filter(
-            title_condition | description_condition
-        ).distinct()
+        for term in search_terms:
+            queries.append(Q(title__icontains=term))
+            queries.append(Q(description__icontains=term))
+
+        combined_query = queries.pop()
+        for query in queries:
+            combined_query |= query
+
+        return queryset.filter(combined_query).distinct()
 
     @property
     def qs(self):
         """Дополнительная обработка queryset"""
         queryset = super().qs
 
-        # Пример: исключение архивных по умолчанию
+        # Исключаем архивные по умолчанию
         if not self.form.cleaned_data.get('status'):
             queryset = queryset.exclude(
                 status=EducationalModule.ModuleStatus.ARCHIVED

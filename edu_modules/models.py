@@ -17,6 +17,7 @@ class EducationalModule(models.Model):
     order: int = models.PositiveIntegerField(
         verbose_name=_('Порядковый номер'),
         validators=[MinValueValidator(1), MaxValueValidator(1000)],
+        default=0,
         help_text=_('Число от 1 до 1000')
     )
 

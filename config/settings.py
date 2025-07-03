@@ -11,6 +11,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -165,3 +166,32 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
+
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+if 'test' in sys.argv or 'pytest' in sys.argv[0]:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+            'TEST': {
+                'NAME': ':memory:',
+            }
+        }
+    }
+
+
+    # Отключаем миграции для ускорения тестов
+    class DisableMigrations:
+        def __contains__(self, item):
+            return True
+
+        def __getitem__(self, item):
+            return None
+
+
+    MIGRATION_MODULES = DisableMigrations()
