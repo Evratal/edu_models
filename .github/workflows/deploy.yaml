@@ -45,7 +45,7 @@ jobs:
 
       - name: Run tests with SQLite
         env:
-          DJANGO_SETTINGS_MODULE: your_project.settings.test
+          DJANGO_SETTINGS_MODULE: settings.test
         run: |
           python manage.py test edu_modules.tests --noinput
 
