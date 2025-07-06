@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:14
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: edu_modules
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: azerty1998
     ports:
       - "5432:5432"
     volumes:
@@ -20,7 +20,6 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/edu_modules
-
+      - DB_HOST=db
 volumes:
   postgres_data:

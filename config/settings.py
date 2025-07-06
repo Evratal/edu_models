@@ -41,12 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Сторонние приложения
     'rest_framework',
     'django_filters',
-
-    # Локальные приложения
     'edu_modules.apps.EduModulesConfig',
+    'drf_spectacular',
+    'drf_spectacular_sidecar'
 ]
 
 MIDDLEWARE = [
@@ -140,11 +139,14 @@ REST_FRAMEWORK = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'edu_modules'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DB_HOST', 'db'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': 'edu_modules',
+        'USER': 'postgres',
+        'PASSWORD': 'azerty1998',  # Простой пароль
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+        }
     }
 }
 
@@ -195,3 +197,17 @@ if 'test' in sys.argv or 'pytest' in sys.argv[0]:
 
 
     MIGRATION_MODULES = DisableMigrations()
+
+# DRF Spectacular Settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Educational Modules API',
+    'DESCRIPTION': 'API для управления образовательными модулями',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+    'SCHEMA_PATH_PREFIX': '/api/',
+}
+
+AUTH_USER_MODEL = 'auth.User'

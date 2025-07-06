@@ -22,7 +22,7 @@ class EducationalModuleModelTest(TestCase):
             module.full_clean()
 
     def test_string_representation(self):
-        self.assertEqual(str(self.module), "1. Тестовый модуль")
+        self.assertEqual(str(self.module), '1. Тестовый модуль (Черновик)')
 
     def test_short_description_property(self):
         self.module.description = "a" * 150
