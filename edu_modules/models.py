@@ -7,7 +7,6 @@ from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 
 
-
 class EducationalModule(models.Model):
     """
     Модель образовательного модуля с полной типизацией и бизнес-логикой.
