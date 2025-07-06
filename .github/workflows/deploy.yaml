@@ -1,0 +1,104 @@
+name: Django CI/CD Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+      - name: Install flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+      - name: Create flake8 config
+        run: |
+          cat << EOF > .flake8
+          [flake8]
+          max-line-length = 120
+          ignore = E203,E266,W503,E501,C901
+          exclude = .git,__pycache__,migrations,venv,.venv,env,.env,.github,scripts,docs,build,dist
+          EOF
+      - name: Run flake8
+        run: flake8 .
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests with SQLite
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+        run: |
+          python manage.py test edu_modules.tests --noinput
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+      - name: Build and push
+        run: |
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate secrets
+        run: |
+          echo "Docker Hub username is set: ${{ secrets.DOCKER_HUB_USERNAME != '' }}"
+          echo "Docker Hub token is set: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN != '' }}"
+          echo "SSH key is set: ${{ secrets.SSH_KEY != '' }}"
+          echo "SSH user: ${{ secrets.SSH_USER || 'NOT_SET' }}"
+          echo "Server IP: ${{ secrets.SERVER_IP || 'NOT_SET' }}"
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Test SSH connection
+        run: |
+          echo "Testing connection to server..."
+          ssh -o ConnectTimeout=15 \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'Connection successful! Hostname: $(hostname)'"
+
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          echo "Starting deployment..."
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+          docker stop myapp || true
+          docker rm myapp || true
+          docker run -d \
+            --name myapp \
+            -p 80:8000 \
+            -e DJANGO_SETTINGS_MODULE=core.settings.production \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+          echo "Deployment completed!"
+          EOF
