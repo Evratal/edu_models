@@ -6,7 +6,6 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 
-from config import settings
 
 
 class EducationalModule(models.Model):
